@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:test/cart.dart';
+import 'package:test/details.dart';
 import 'package:test/product.dart';
 
 class testScreen extends StatelessWidget {
@@ -8,7 +10,6 @@ class testScreen extends StatelessWidget {
   final nameCtrl = TextEditingController();
   final descCtrl = TextEditingController();
   final priceCtrl = TextEditingController();
-  // final products = Products();
 
   @override
   Widget build(BuildContext context) {
@@ -16,18 +17,73 @@ class testScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text("MAD Shopping"),
-        actions: [IconButton(onPressed:()=> showAdd(context), icon: Icon(Icons.add))],
+        actions: [
+          Consumer<Cart>(
+            builder: (context, cart, child) => Stack(
+              children: [
+                IconButton(
+                  onPressed: () {},
+                  icon: Icon(Icons.shopping_cart_outlined),
+                ),
+                Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    height: 25,
+                    width: 25,
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: .circular(20),
+                    ),
+                    child: Center(
+                      child: Text(
+                        cart.totalQuantity > 99
+                            ? "99+"
+                            : cart.totalQuantity.toString(),
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(onPressed: () => showAdd(context), icon: Icon(Icons.add)),
+        ],
       ),
       body: SafeArea(
         child: Consumer<Products>(
-          builder: (context, prod, _) => ListView.builder(
+          builder: (context, prod, child) => ListView.builder(
             itemCount: prod.items.length,
             itemBuilder: (_, index) {
               var data = prod.items[index];
-              return Card(child: ListTile(
-                title: Text(data.name),
-                trailing: IconButton(onPressed:()=> isFavorite(data.id, context), icon: data.isFave == false? Icon(Icons.favorite_outline) : Icon(Icons.favorite, color: Colors.red,)),
-                ));
+              return GestureDetector(
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => detailScreen(prod: data)),
+                ),
+                child: Card(
+                  child: ListTile(
+                    title: Text(data.name),
+                    subtitle: Text(data.price.toString()),
+                    trailing: Row(
+                      mainAxisSize: .min,
+                      children: [
+                        IconButton(
+                          onPressed: () => isFavorite(data.id, context),
+                          icon: data.isFave == false
+                              ? Icon(Icons.favorite_outline)
+                              : Icon(Icons.favorite, color: Colors.red),
+                        ),
+
+                        IconButton(
+                          onPressed: () => addCart(context, data),
+                          icon: Icon(Icons.shopping_cart),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
             },
           ),
         ),
@@ -72,7 +128,7 @@ class testScreen extends StatelessWidget {
           ),
           actions: [
             TextButton(onPressed: null, child: Text("Cancel")),
-            ElevatedButton(onPressed: ()=>addProd(ctx), child: Text("Add")),
+            ElevatedButton(onPressed: () => addProd(ctx), child: Text("Add")),
           ],
         );
       },
@@ -95,5 +151,11 @@ class testScreen extends StatelessWidget {
   void isFavorite(int id, BuildContext ctx) {
     var prod = Provider.of<Products>(ctx, listen: false);
     prod.toggleID(id);
+  }
+
+  void addCart(BuildContext ctx, Product prod) {
+    var cart = Provider.of<Cart>(ctx, listen: false);
+    var item = CartItem(product: prod, quantity: 20);
+    cart.add(item);
   }
 }
